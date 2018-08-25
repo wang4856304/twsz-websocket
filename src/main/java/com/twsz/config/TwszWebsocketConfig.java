@@ -10,6 +10,8 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 @EnableWebSocket
 public class TwszWebsocketConfig implements WebSocketConfigurer {
 
+    public static final String TWSZ_HANDLER = "twszHandler";
+
     @Bean
     public TwszWebSocketHandler getTwszWebSocketHandler() {
         return new TwszWebSocketHandler();
@@ -17,7 +19,7 @@ public class TwszWebsocketConfig implements WebSocketConfigurer {
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry webSocketHandlerRegistry) {
-        webSocketHandlerRegistry.addHandler(getTwszWebSocketHandler(), "/twszHandler/{ID}").setAllowedOrigins("*").addInterceptors(new TwszWebSocketInterceptor());
+        webSocketHandlerRegistry.addHandler(getTwszWebSocketHandler(), "/twszHandler/{id}").setAllowedOrigins("*").addInterceptors(new TwszWebSocketInterceptor());
     }
 }
 

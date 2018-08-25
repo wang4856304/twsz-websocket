@@ -72,6 +72,10 @@
             <artifactId>fastjson</artifactId>
             <version>${fastJson-version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+        </dependency>
     </dependencies>
 
     <profiles>

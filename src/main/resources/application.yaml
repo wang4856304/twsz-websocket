@@ -1,5 +1,4 @@
 server:
    port: 9820
-spring:
-   profiles:
-      active: dev
+mobile: 15289288565
+project: twsz-websocket

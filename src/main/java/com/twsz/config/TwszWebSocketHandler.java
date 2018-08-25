@@ -18,8 +18,9 @@ public class TwszWebSocketHandler implements WebSocketHandler {
 
     @Override
     public void afterConnectionEstablished(WebSocketSession webSocketSession) throws Exception {
-        String userId = webSocketSession.getUri().toString().split("ID=")[1];
-        log.info("用户id为" + userId + "建立连接成功!");
+        String group = (String) webSocketSession.getAttributes().get(TwszWebSocketInterceptor.GROUP);
+        String userId = (String) webSocketSession.getAttributes().get(TwszWebSocketInterceptor.WEBSOCKET_USERID);
+        log.info( "group为" + group + ",用户id为" + userId + "建立连接成功!");
         if (!StringUtils.isEmpty(userId)) {
             userMap.put(userId, webSocketSession);
             webSocketSession.sendMessage(new TextMessage("连接建立成功!"));
@@ -70,7 +71,7 @@ public class TwszWebSocketHandler implements WebSocketHandler {
         try {
             session.sendMessage(message);
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("推送消息失败", e);
             return false;
         }
         return true;
@@ -92,7 +93,34 @@ public class TwszWebSocketHandler implements WebSocketHandler {
                     session.sendMessage(message);
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                log.error("推送消息失败", e);
+                allSendSuccess = false;
+            }
+        }
+
+        return  allSendSuccess;
+    }
+
+    /**
+     * 广播信息
+     * @param message
+     * @return
+     */
+    public boolean sendMessageToAllUsers(String group, TextMessage message) {
+        boolean allSendSuccess = true;
+        Set<String> clientIds = userMap.keySet();
+        WebSocketSession session = null;
+        for (String clientId : clientIds) {
+            try {
+                session = userMap.get(clientId);
+                if (session.isOpen()) {
+                    String groupStr = (String)session.getAttributes().get(TwszWebSocketInterceptor.GROUP);
+                    if (group.equals(groupStr)) {
+                        session.sendMessage(message);
+                    }
+                }
+            } catch (IOException e) {
+                log.error("推送消息失败", e);
                 allSendSuccess = false;
             }
         }
