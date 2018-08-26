@@ -30,11 +30,10 @@ public class TwszWebSocketHandler implements WebSocketHandler {
         String userId = (String) webSocketSession.getAttributes().get(TwszWebSocketInterceptor.WEBSOCKET_USERID);
         log.info( "group为" + group + ",用户id为" + userId + "建立连接成功!");
         if (!StringUtils.isEmpty(userId)) {
-            redisService.hessianSet(RedisKeyConstant.USER_SESSION + userId, webSocketSession);
-            redisService.incr(USER_SESSION_COUNT);
+            userMap.put(userId, webSocketSession);
             webSocketSession.sendMessage(new TextMessage("连接建立成功!"));
         }
-        log.info("当前在线人数为:" + redisService.get(USER_SESSION_COUNT));
+        log.info("当前在线人数为:" + userMap.size());
     }
 
     @Override
@@ -55,9 +54,9 @@ public class TwszWebSocketHandler implements WebSocketHandler {
     @Override
     public void afterConnectionClosed(WebSocketSession webSocketSession, CloseStatus closeStatus) throws Exception {
         String userId = (String) webSocketSession.getAttributes().get(TwszWebSocketInterceptor.WEBSOCKET_USERID);
-        redisService.decr(USER_SESSION_COUNT);
+        userMap.remove(userId);
         log.info("用户id为" + userId + "连接已关闭!");
-        log.info("当前在线人数为:" + redisService.get(USER_SESSION_COUNT));
+        log.info("当前在线人数为:" + userMap.size());
     }
 
     @Override
@@ -72,7 +71,7 @@ public class TwszWebSocketHandler implements WebSocketHandler {
      * @return
      */
     public boolean sendMessageToUser(String clientId, TextMessage message) {
-        WebSocketSession session = redisService.hessianGet(RedisKeyConstant.USER_SESSION + clientId);
+        WebSocketSession session = userMap.get(clientId);
         if (session == null) {
             return false;
         }
