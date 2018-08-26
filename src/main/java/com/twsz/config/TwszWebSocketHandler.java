@@ -1,8 +1,11 @@
 package com.twsz.config;
 
 import com.alibaba.fastjson.JSONObject;
+import com.twsz.constant.RedisKeyConstant;
+import com.twsz.service.redis.RedisService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 import org.springframework.web.socket.*;
 
@@ -11,10 +14,15 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.twsz.constant.RedisKeyConstant.USER_SESSION_COUNT;
+
 public class TwszWebSocketHandler implements WebSocketHandler {
 
     private static final ConcurrentMap<String, WebSocketSession> userMap = new ConcurrentHashMap<>();
     private static Log log = LogFactory.getLog(TwszWebSocketHandler.class);
+
+    @Autowired
+    private RedisService redisService;
 
     @Override
     public void afterConnectionEstablished(WebSocketSession webSocketSession) throws Exception {
@@ -22,10 +30,11 @@ public class TwszWebSocketHandler implements WebSocketHandler {
         String userId = (String) webSocketSession.getAttributes().get(TwszWebSocketInterceptor.WEBSOCKET_USERID);
         log.info( "group为" + group + ",用户id为" + userId + "建立连接成功!");
         if (!StringUtils.isEmpty(userId)) {
-            userMap.put(userId, webSocketSession);
+            redisService.hessianSet(RedisKeyConstant.USER_SESSION + userId, webSocketSession);
+            redisService.incr(USER_SESSION_COUNT);
             webSocketSession.sendMessage(new TextMessage("连接建立成功!"));
         }
-        log.info("当前在线人数为:" + userMap.size());
+        log.info("当前在线人数为:" + redisService.get(USER_SESSION_COUNT));
     }
 
     @Override
@@ -46,8 +55,9 @@ public class TwszWebSocketHandler implements WebSocketHandler {
     @Override
     public void afterConnectionClosed(WebSocketSession webSocketSession, CloseStatus closeStatus) throws Exception {
         String userId = (String) webSocketSession.getAttributes().get(TwszWebSocketInterceptor.WEBSOCKET_USERID);
-        userMap.remove(userId);
+        redisService.decr(USER_SESSION_COUNT);
         log.info("用户id为" + userId + "连接已关闭!");
+        log.info("当前在线人数为:" + redisService.get(USER_SESSION_COUNT));
     }
 
     @Override
@@ -62,9 +72,10 @@ public class TwszWebSocketHandler implements WebSocketHandler {
      * @return
      */
     public boolean sendMessageToUser(String clientId, TextMessage message) {
-        if (userMap.get(clientId) == null) return false;
-        WebSocketSession session = userMap.get(clientId);
-        //System.out.println("sendMessage:" + session);
+        WebSocketSession session = redisService.hessianGet(RedisKeyConstant.USER_SESSION + clientId);
+        if (session == null) {
+            return false;
+        }
         if (!session.isOpen()) {
             return false;
         }
