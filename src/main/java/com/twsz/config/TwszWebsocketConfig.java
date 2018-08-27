@@ -12,7 +12,7 @@ public class TwszWebsocketConfig implements WebSocketConfigurer {
 
     public static final String TWSZ_HANDLER = "twszHandler";
 
-    @Bean
+    @Bean(name = "twszWebSocketHandler")
     public TwszWebSocketHandler getTwszWebSocketHandler() {
         return new TwszWebSocketHandler();
     }
