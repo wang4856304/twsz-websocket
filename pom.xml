@@ -14,7 +14,7 @@
         <log-version>1.7.25</log-version>
         <spring-boot-version>1.5.8.RELEASE</spring-boot-version>
         <start-class>com.twsz.TwszWebsocketApp</start-class>
-        <fastJson-version>1.2.44</fastJson-version>
+        <fastJson-version>1.2.83</fastJson-version>
     </properties>
 
     <parent>
